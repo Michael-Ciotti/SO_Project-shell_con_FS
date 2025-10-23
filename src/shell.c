@@ -137,5 +137,5 @@ int main(void){
     return 0;
 }
 
-/*da fare domani: strutture per il filesystem e inizio 
-implementazione metodi per la logica dei cmd e dei piccoli metodi ausiliari (clean e tokenize)*/
+/*da fare domani: inizio implementazione metodi per la logica dei cmd 
+e dei piccoli metodi ausiliari (clean e tokenize)*/
