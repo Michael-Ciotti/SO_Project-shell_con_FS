@@ -14,7 +14,7 @@
 #define MAX_NAME        56
 #define DIRECT_PTRS     8 //numero di blocchi diretti a cui può puntare un inode
 
-typedef enum {INODE_FREE=0, INODE_FILE=1, INODE_DIR=2} InodeTypes;
+typedef enum {INODE_FREE=0, INODE_FILE=1, INODE_DIR=2} InodeType;
 
 //Struttura che rapprensenta il Superblocco
 typedef struct {
@@ -59,9 +59,10 @@ typedef struct {
 extern FS fs;
 
 /*metodi di util legati al fs, usati dai vari comandi*/
-void bind(FS *fs);
+void fs_bind(FS *fs);
 int alloc_block(void);
 int inode_ensure_block(Inode *inode, int slot);
 uint8_t* block_ptr(uint32_t block);
+int  alloc_inode(InodeType t, uint32_t parent);
 
 #endif

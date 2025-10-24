@@ -16,12 +16,12 @@ void cmd_format(const char *img, size_t size){
     }
     /*metodo per verificare che il nome dell'immagine includa
     l'estensione img*/
-    if(!has_img_ext(img)){
+    if(!check_ext(img)){
         puts("format: file must have the .img extension. Retry.");
         return;
     }
 
-    /*util che controlla se esiste la cartella img dove andrà il file
+    /*metodo che controlla se esiste la cartella img dove andrà il file
     persistente, ed eventualmente in caso negativo la crea*/
     img_dir();
 
@@ -37,7 +37,8 @@ void cmd_format(const char *img, size_t size){
         return;
     }
 
-    fs_close();
+    /*chiudo eventuali filesystem aperti*/
+    //fs_close();
 
     const uint32_t inode_bytes=MAX_INODES*sizeof(Inode);
     const uint32_t inode_blocks=(inode_bytes+BLOCK_SIZE-1)/BLOCK_SIZE;
@@ -99,7 +100,7 @@ void cmd_format(const char *img, size_t size){
     sb->total_blocks=data_blocks;
 
     /*collegamento del superblocco al FS a runtime*/
-    bind(&fs);
+    fs_bind(&fs);
 
     /*si effettua un controllo per vedere se tutti i bytes 
     rientrano nella dimensione del file*/
@@ -124,8 +125,6 @@ void cmd_format(const char *img, size_t size){
     root->parent=0;
     root->size=0;
     
-    /*con inode_ensure_block verifico che ci sia spazio per 
-    l'inode della root ed eventualmente, se non c'è, provo ad allocarlo*/
     if(inode_ensure_block(root, 0)<0) die("format: no space for root block");
     dir_append_entry(0, ".", 0);
     dir_append_entry(0, "..", 0);
@@ -134,6 +133,35 @@ void cmd_format(const char *img, size_t size){
     msync(fs.base, fs.file_size, MS_SYNC);
 
     printf("FS created: %s (size=%zu bytes, data_blocks=%u, bitmap_blocks=%u, inode_blocks=%u)\n",
-            img, size, sb->total_blocks, sb->bitmap_blocks, sb->inode_blocks);
-    
+            img, size, sb->total_blocks, sb->bitmap_blocks, sb->inode_blocks);   
+}
+
+void cmd_mkdir(const char *path){
+    ensure_opened();
+    char dir_name[MAX_NAME]={0};
+    int p=path_to_inode_n(path, 1, dir_name);
+    if(p<0){
+        puts("mkdir: parent not found");
+        return;
+    }
+    Inode *pd =&fs.inode_tab[p];
+    if(pd->type!=INODE_DIR){
+        puts("mkdir: parent not dir");
+        return;
+    }
+    DirEntry tmp;
+    if(!dir_find(pd, dir_name, NULL, &tmp)){
+        puts("mkdir: dir already exists");
+        return;
+    }
+    int inode=alloc_inode(INODE_DIR, p);
+    if(inode<0) {
+        puts("mkdir: no inode");
+        return;
+    }
+    Inode *new_dir=&fs.inode_tab[inode];
+    inode_ensure_block(new_dir, 0);
+    dir_append_entry(inode, ".", inode);
+    dir_append_entry(inode, ".", p);
+    if(dir_append_entry(p, dir_name, inode)<0) puts("mkdir: dir full");
 }

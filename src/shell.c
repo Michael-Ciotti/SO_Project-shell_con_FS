@@ -9,6 +9,7 @@ della funzione readline*/
 #include <readline/history.h>
 
 #include "util.h"
+#include "commands.h"
 
 
 static char file_history[1024]={0};
@@ -30,7 +31,6 @@ int main(void){
 
     print_intro();
 
-    char prompt[512];
     for(;;){
         char *prompt="shell>";
         char *line=readline(prompt);
@@ -44,7 +44,7 @@ int main(void){
         }
         add_history(clean_line);
 
-        char*argv[8];
+        char *argv[8];
         /*il metodo tokenize splitta gli argomenti passati alla shell, popola argv
         e restiruisce in argc il numero dei token ottenuti*/
         int argc=tokenize(clean_line, argv, 8);
@@ -54,45 +54,45 @@ int main(void){
             continue;
         }
 
-        if(!strcmp(*argv[0], "format")){
+        if(!strcmp(argv[0], "format")){
             if(argc!=3)
                 puts("use: format <fs_filename.img> <size>");
             else{
                 size_t size=strtoull(argv[2], NULL, 10);
                 cmd_format(argv[1], size);
             }
-        } else if(!strcmp(*argv[0], "mkdir")){
+        } else if(!strcmp(argv[0], "mkdir")){
             if(argc!=2) 
                 puts("use: mkdir <dir_name>");
             else
                 cmd_mkdir(argv[1]);
-        } else if(!strcmp(*argv[0], "cd")){
+        }/* else if(!strcmp(argv[0], "cd")){
             if(argc!=2) 
                 puts("use: cd <path>");
             else
                 cmd_cd(argv[1]);
-        } else if(!strcmp(*argv[0], "touch")){
+        } else if(!strcmp(argv[0], "touch")){
             if(argc!=2) 
                 puts("use: touch <file_name>");
             else
                 cmd_touch(argv[1]);
-        } else if(!strcmp(*argv[0], "cat")){
+        } else if(!strcmp(argv[0], "cat")){
             if(argc!=2) 
                 puts("use: cat <file>");
             else
                 cmd_cat(argv[1]);
-        } else if(!strcmp(*argv[0], "ls")){
+        } else if(!strcmp(argv[0], "ls")){
             cmd_ls(argc>=2?argv[1]:NULL);
-        } else if(!strcmp(*argv[0], "append")){
+        } else if(!strcmp(argv[0], "append")){
             if(argc<3) 
                 puts("use: append <filename> <text> (if you need to use spaces, write text like \"Hello World!!!\")");
             else
                 cmd_append(argv[1], argv[2]);
-        } else if(!strcmp(*argv[0], "rm")){
+        } else if(!strcmp(argv[0], "rm")){
             if (argc<2 || argc>3)
                 puts("uso: rm [-r|-rf] <file|dir>");
             else cmd_rm(argc==3?argv[2]:argv[1], argc==3?argv[1]:NULL);
-        } else if(!strcmp(*argv[0], "close")){
+        } else if(!strcmp(argv[0], "close")){
             if (argc<2 || argc>3)
                 cmd_close();
         } else if (!strcmp(argv[0],"exit")){
@@ -111,7 +111,7 @@ int main(void){
             else {
                 cmd_open_wrap(argv[1]);
             }
-        } else if (!strcmp(argv[0],"help")){
+        } */else if (!strcmp(argv[0],"help")){
             puts("================= HELP ==================");
             puts("");
             puts("Commands:");
@@ -135,6 +135,6 @@ int main(void){
         free(line);
     }
     if(file_history[0]) write_history(file_history);
-    fs_close();
+    //fs_close();
     return 0;
 }

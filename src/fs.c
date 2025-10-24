@@ -5,7 +5,7 @@ fd che inizializzo a -1 per indicare che non c'è nessun file aperto*/
 FS fs={.fd=-1};
 
 /*metodo che collega e allinea i blocchi al FS a runtime*/
-void bind(FS *fs){
+void fs_bind(FS *fs){
     fs->sup_b=(Super*)fs->base;
     fs->bitmap=(uint8_t*)fs->base+BLOCK_SIZE;
     fs->inode_tab=(Inode*)(fs->base+BLOCK_SIZE+fs->sup_b->bitmap_blocks*BLOCK_SIZE);
@@ -20,8 +20,8 @@ int alloc_block(){
             fs.bitmap[b]=1;
             return (int)b;
         }
-        return -1;
     }
+    return -1;
 }
 
 /*metodo che assegna un blocco dati valido ad un inode*/
@@ -40,4 +40,19 @@ int inode_ensure_block(Inode *inode, int slot){
 restituisce il puntatore all'indiriizzo di memoria*/
 uint8_t* block_ptr(uint32_t block){ 
     return fs.data + block*BLOCK_SIZE; 
+}
+
+/*metodo per allocare un nuovo inode e di conseguenza per creare nuove
+cartelle/file (alla fine ritorna il suo indice nella tabella degli inode
+oppure -1 in caso di fallimento)*/
+int  alloc_inode(InodeType t, uint32_t parent){
+    for(int i=0; i<MAX_INODES; i++){
+        if(fs.inode_tab[i].type==INODE_FREE){
+            memset(&fs.inode_tab[i], 0, sizeof(Inode));
+            fs.inode_tab[i].type=t;
+            fs.inode_tab[i].parent=parent;
+            return i;
+        }
+    }
+    return -1;
 }

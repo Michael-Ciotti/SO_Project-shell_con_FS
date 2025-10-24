@@ -5,6 +5,7 @@
 #include <errno.h>
 #include <sys/mman.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 #include "fs.h"
 #include "util.h"
@@ -55,3 +56,25 @@ void die(const char *msg){
     _exit(1);
 }
 
+/*metodo che controlla se l'immagine ha l'estensione corretta (.img)*/
+int check_ext(const char *name){
+    if(!name) return 0;
+    size_t len=strlen(name);
+    return (len>=4 && strcmp(name+(len-4), ".img")==0);
+}
+
+/*metodo che controlla se esiste la cartella img dove andrà il file
+persistente, ed eventualmente in caso negativo la crea*/
+void img_dir(){
+    struct stat st;
+    if(stat("img", &st)==-1 && errno != EEXIST){
+        if(mkdir("img", 0755)==-1 && errno != EEXIST){
+            perror("mkdir img");
+        }
+    }
+}
+
+/*metodo che controlla se un filesystem è aperto*/
+void ensure_opened(){
+    if(!fs.base) die("No FS opened. Use: open <fs_filename.img> if you have one, or format <fs_filename.img> <size> iif not");
+}
