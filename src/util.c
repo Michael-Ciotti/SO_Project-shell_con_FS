@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
-#include <errno.h>
+#include <sys/errno.h>
 #include <sys/mman.h>
 #include <unistd.h>
 #include <sys/stat.h>
@@ -76,5 +76,5 @@ void img_dir(){
 
 /*metodo che controlla se un filesystem è aperto*/
 void ensure_opened(){
-    if(!fs.base) die("No FS opened. Use: open <fs_filename.img> if you have one, or format <fs_filename.img> <size> iif not");
+    if(!fs.base) die("No FS opened. Use: open <fs_filename.img> if you have one or, if not, format <fs_filename.img> <size>");
 }

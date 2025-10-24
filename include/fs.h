@@ -59,6 +59,7 @@ typedef struct {
 extern FS fs;
 
 /*metodi di util legati al fs, usati dai vari comandi*/
+
 void fs_bind(FS *fs);
 int alloc_block(void);
 int inode_ensure_block(Inode *inode, int slot);

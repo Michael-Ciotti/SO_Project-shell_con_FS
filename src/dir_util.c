@@ -43,7 +43,7 @@ int dir_append_entry(int dir_inode, const char *name, int target_inode){
     return -1;
 }
 
-/*metodo che cerca se la cartella è presente*/
+/*metodo che cerca se una DirEntry è gia presente*/
 int dir_find(Inode *dir, const char *name, int *out_slot, DirEntry *out){
     if(!dir || dir->type!=INODE_DIR) return -1;
     uint32_t nbytes =dir->size, pos=0;

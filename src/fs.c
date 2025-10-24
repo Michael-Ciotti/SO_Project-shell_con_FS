@@ -37,7 +37,7 @@ int inode_ensure_block(Inode *inode, int slot){
 }
 
 /*metodo che a partire dal numero di un blocco
-restituisce il puntatore all'indiriizzo di memoria*/
+restituisce il puntatore all'indirizzo di memoria*/
 uint8_t* block_ptr(uint32_t block){ 
     return fs.data + block*BLOCK_SIZE; 
 }

@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/mman.h>
+#include <sys/errno.h>
 
 #include "commands.h"
 
@@ -99,7 +100,6 @@ void cmd_format(const char *img, size_t size){
     sb->bitmap_blocks=bitmap_blocks;
     sb->total_blocks=data_blocks;
 
-    /*collegamento del superblocco al FS a runtime*/
     fs_bind(&fs);
 
     /*si effettua un controllo per vedere se tutti i bytes 
@@ -164,4 +164,118 @@ void cmd_mkdir(const char *path){
     dir_append_entry(inode, ".", inode);
     dir_append_entry(inode, ".", p);
     if(dir_append_entry(p, dir_name, inode)<0) puts("mkdir: dir full");
+}
+
+void cmd_touch(const char *path){
+    ensure_opened();
+    char filename[MAX_NAME]={0};
+    int p=path_to_inode_n(path, 1, filename);
+    if(p<0){
+        puts("touch: parent not found");
+        return;
+    }
+    Inode *pd=&fs.inode_tab[p];
+    DirEntry tmp;
+    if(!dir_find(pd, filename, NULL, &tmp)){
+        return;
+    }
+    int inode=alloc_inode(INODE_FILE, p);
+    if(inode<0){
+        puts("touch: inode error");
+        return;
+    }
+    if(dir_append_entry(p, filename, inode)<0) puts("touch: dir full");
+}
+
+void cmd_cd(const char *path){
+    ensure_opened();
+    int inode=path_to_inode_n(path, 0, NULL);
+    if(inode<0 || fs.inode_tab[inode].type!=INODE_DIR){
+        puts("cd: no such dir");
+        return;
+    }
+    fs.cwd_inode=inode;
+}
+
+void cmd_open(const char *img){
+    if(!img || !*img){
+        puts("use: open <fs_filename.img");
+        return;
+    }
+    if(!check_ext(img)){
+        puts("open: file must have .img extension. Retry.");
+        return;
+    }
+    char path[1024];
+    img_dir();
+    snprintf(path, sizeof(path), "img/%s", img);
+    fs.fd=open(path, O_RDWR);
+    if(fs.fd<0){
+        printf("open %s: %s", path, strerror(errno));
+        return;
+    }
+    struct stat st;
+    if(fstat(fs.fd, &st)<0) die("fstat:");
+    fs.file_size=(size_t)st.st_size;
+    fs.base=mmap(NULL, fs.file_size, PROT_READ|PROT_WRITE, MAP_SHARED, fs.fd, 0);
+    if(fs.base==MAP_FAILED) die("mmap:");
+    fs_bind(&fs);
+    if(fs.sup_b->signature!=FS_SIGNATURE) die("Invalid image");
+    fs.cwd_inode=fs.sup_b->root_inode;
+}
+
+void cmd_cat(const char *path){
+    ensure_opened();
+    int inode=path_to_inode_n(path, 0, NULL);
+    if(inode<0 || fs.inode_tab[inode].type!=INODE_FILE){
+        puts("cat: not a file");
+        return;
+    }
+    file_read(inode);
+    putchar('\n');
+}
+
+void cmd_append(const char *path, const char *text){
+    ensure_opened();
+    int inode=path_to_inode_n(path, 0, NULL);
+    if(inode<0 || fs.inode_tab[inode].type!=INODE_FILE){
+        puts("append: not a file");
+        return;
+    }
+    if(file_write(inode, text)<0) puts("append: no space");
+}
+
+void cmd_ls(const char *path){
+    if(!fs.base){
+        puts("No FS opened. Use: open <fs_filename.img> if you have one or, if not, use format <fs_filename.img> <size>");
+        return;
+    }
+    int inode=path?path_to_inode_n(path, 0, NULL):fs.cwd_inode;
+    if(inode<0){
+        puts("ls: not found");
+        return;
+    }
+    Inode *d=&fs.inode_tab[inode];
+    if(d->type==INODE_FILE){
+        printf("%s\n", path?path:"(file)");
+        return;
+    }
+    uint32_t n_bytes=d->size, pos=0;
+    while(pos<n_bytes){
+        int block_index=(int)(pos/BLOCK_SIZE), off=(int)(pos%BLOCK_SIZE);
+        if(block_index>=DIRECT_PTRS) break;
+        if(d->direct[block_index]==0) break;
+        DirEntry *arr=(DirEntry*)(block_ptr(d->direct[block_index]+off));
+        int rem_space=BLOCK_SIZE-off, capacity=rem_space/(int)sizeof(DirEntry);
+        for(int i=0; i<capacity && pos<n_bytes; i++, pos+=sizeof(DirEntry)){
+            if(arr[i].inode!=-1){
+                if(arr[i].inode>=0 && arr[i].inode<MAX_INODES){
+                    Inode *inode=&fs.inode_tab[arr[i].inode];
+                    printf("%c  %s\n", inode->type==INODE_DIR?'d':'-', arr[i].name);
+                } else{
+                    printf("? %s\n", arr[i].name);
+                }
+            }
+        }
+    }
 }

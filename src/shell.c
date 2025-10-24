@@ -32,7 +32,7 @@ int main(void){
     print_intro();
 
     for(;;){
-        char *prompt="shell>";
+        char *prompt="shell> ";
         char *line=readline(prompt);
         if(!line) break;
         /*clean è un metodo che "ripulisce" la stringa da 
@@ -66,12 +66,12 @@ int main(void){
                 puts("use: mkdir <dir_name>");
             else
                 cmd_mkdir(argv[1]);
-        }/* else if(!strcmp(argv[0], "cd")){
+        } else if(!strcmp(argv[0], "cd")){
             if(argc!=2) 
                 puts("use: cd <path>");
             else
                 cmd_cd(argv[1]);
-        } else if(!strcmp(argv[0], "touch")){
+        }else if(!strcmp(argv[0], "touch")){
             if(argc!=2) 
                 puts("use: touch <file_name>");
             else
@@ -88,7 +88,7 @@ int main(void){
                 puts("use: append <filename> <text> (if you need to use spaces, write text like \"Hello World!!!\")");
             else
                 cmd_append(argv[1], argv[2]);
-        } else if(!strcmp(argv[0], "rm")){
+        }/* else if(!strcmp(argv[0], "rm")){
             if (argc<2 || argc>3)
                 puts("uso: rm [-r|-rf] <file|dir>");
             else cmd_rm(argc==3?argv[2]:argv[1], argc==3?argv[1]:NULL);
@@ -105,13 +105,13 @@ int main(void){
             if (argc != 1) 
                 puts("uso: images");
             else 
-                cmd_list_images();
-        } else if (!strcmp(argv[0],"open")){
+                cmd_images();
+        } */else if (!strcmp(argv[0],"open")){
             if (argc!=2){ puts("use: open <fs_filename.img>"); }
             else {
-                cmd_open_wrap(argv[1]);
+                cmd_open(argv[1]);
             }
-        } */else if (!strcmp(argv[0],"help")){
+        } else if (!strcmp(argv[0],"help")){
             puts("================= HELP ==================");
             puts("");
             puts("Commands:");
