@@ -48,15 +48,10 @@ void die(const char *msg){
         fprintf(stderr, "%s\n", msg);
     else
         fprintf(stderr, "%s : %s\n", msg, strerror(errno));
-    if(fs.base) munmap(fs.base, fs.file_size);
-    if(fs.fd>=0) close(fs.fd);
+    if(fs.base) 
+        munmap(fs.base, fs.file_size);
+    if(fs.fd>=0) 
+        close(fs.fd);
     _exit(1);
 }
 
-/*metodo che collega e allinea i blocchi al FS a runtime*/
-void bind(FS *fs){
-    fs->sup_b=(Super*)fs->base;
-    fs->bitmap=(uint8_t*)fs->base+BLOCK_SIZE;
-    fs->inode_tab=(Inode*)(fs->base+BLOCK_SIZE+fs->sup_b->bitmap_blocks*BLOCK_SIZE);
-    fs->data=(uint8_t*)fs->base+BLOCK_SIZE+fs->sup_b->bitmap_blocks*BLOCK_SIZE+fs->sup_b->inode_blocks*BLOCK_SIZE;
-}

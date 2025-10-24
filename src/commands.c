@@ -87,7 +87,7 @@ void cmd_format(const char *img, size_t size){
         data_blocks=blocks_after_superblock-bitmap_blocks-sb->inode_blocks;
 
         /*ricalcolo dei blocchi necessari esatti per la bitmap*/
-        uint32_t needed_bitmap_size=(data_blocks+7)/8;
+        uint32_t needed_bitmap_size=data_blocks;
         uint32_t new_bitmap_blocks=(needed_bitmap_size+BLOCK_SIZE-1)/BLOCK_SIZE;
         if(new_bitmap_blocks==0)
             new_bitmap_blocks=1;
@@ -115,7 +115,7 @@ void cmd_format(const char *img, size_t size){
     /*azzeramento delle aree del filesystem*/
     memset(fs.bitmap, 0, sb->bitmap_blocks*BLOCK_SIZE);
     memset(fs.inode_tab, 0, sb->inode_blocks*BLOCK_SIZE);
-    memset(fs.bitmap, 0, sb->total_blocks*BLOCK_SIZE);
+    memset(fs.data, 0, sb->total_blocks*BLOCK_SIZE);
 
     /*inizializzazione dell'inode della radice*/
     Inode *root=&fs.inode_tab[0];
@@ -124,5 +124,16 @@ void cmd_format(const char *img, size_t size){
     root->parent=0;
     root->size=0;
     
-    /*da fare domani: finisci il comando format e inizia ad implementare gli altri comandi*/
+    /*con inode_ensure_block verifico che ci sia spazio per 
+    l'inode della root ed eventualmente, se non c'è, provo ad allocarlo*/
+    if(inode_ensure_block(root, 0)<0) die("format: no space for root block");
+    dir_append_entry(0, ".", 0);
+    dir_append_entry(0, "..", 0);
+
+    fs.cwd_inode=0;
+    msync(fs.base, fs.file_size, MS_SYNC);
+
+    printf("FS created: %s (size=%zu bytes, data_blocks=%u, bitmap_blocks=%u, inode_blocks=%u)\n",
+            img, size, sb->total_blocks, sb->bitmap_blocks, sb->inode_blocks);
+    
 }
