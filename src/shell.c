@@ -8,6 +8,8 @@ della funzione readline*/
 #include <readline/readline.h>
 #include <readline/history.h>
 
+#include "util.h"
+
 
 static char file_history[1024]={0};
 
@@ -33,8 +35,8 @@ int main(void){
         char *prompt="shell>";
         char *line=readline(prompt);
         if(!line) break;
-        /*clean è un metodo che verrà implementato per "ripulire" la stringa da 
-        spazi all'inizio o alla fine*/
+        /*clean è un metodo che "ripulisce" la stringa da 
+        spazi all'inizio e alla fine*/
         char *clean_line=clean(line);
         if(!*clean_line){
             free(line);
@@ -43,8 +45,8 @@ int main(void){
         add_history(clean_line);
 
         char*argv[8];
-        /*il metodo tokenize verrà implementato per ottenere il numero 
-        di argomenti passati alla shell e per popolare argv*/
+        /*il metodo tokenize splitta gli argomenti passati alla shell, popola argv
+        e restiruisce in argc il numero dei token ottenuti*/
         int argc=tokenize(clean_line, argv, 8);
 
         if(argc==0){
@@ -136,6 +138,3 @@ int main(void){
     fs_close();
     return 0;
 }
-
-/*da fare domani: inizio implementazione metodi per la logica dei cmd 
-e dei piccoli metodi ausiliari (clean e tokenize)*/

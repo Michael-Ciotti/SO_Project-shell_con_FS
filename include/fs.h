@@ -23,7 +23,7 @@ typedef struct {
     uint32_t total_blocks;
     uint32_t inode_count;
     uint32_t root_inode; //numero dell'inode della root
-    uint32_t bmp_blocks; //numero di blocchi occupati dalla bitmap per verificare blocchi liberi
+    uint32_t bitmap_blocks; //numero di blocchi occupati dalla bitmap per verificare blocchi liberi
     uint32_t inode_blocks; //numero di blocchi occupati daglla tabella degli inode
 }Super;
 
@@ -48,12 +48,13 @@ typedef struct {
     int fd; //file descriptor del file .img del FS
     size_t file_size;
     void *base; //indirizzo base del FS che sarà ottenuto con mmap
-    Super *s;
-    uint8_t *bmp;
+    Super *sup_b;
+    uint8_t *bitmap;
     Inode *inode_tab;
     uint8_t *data; //puntatore all'area dati
     uint32_t cwd_inode;
 }FS;
 
+extern FS fs;
 
 #endif
