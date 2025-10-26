@@ -47,6 +47,7 @@ typedef struct {
 //Struttura che rappresenta il filesystem a runtime
 typedef struct {
     int fd; //file descriptor del file .img del FS
+    char fs_filename[MAX_NAME];
     size_t file_size;
     void *base; //indirizzo base del FS che sarà ottenuto con mmap
     Super *sup_b;

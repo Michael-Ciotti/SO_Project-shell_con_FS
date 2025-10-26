@@ -23,8 +23,9 @@ static void print_intro(){
 
 int main(void){
 
-    /*Scrittura del nome del file nel buffer globale e inizializzazione 
-    del "tool" che permette di gestire la cronologia dei comandi*/
+    /*Scrittura del nome del file di cronologia nel buffer globale e 
+    inizializzazione del "tool" che permette di gestire la cronologia 
+    dei comandi*/
     sprintf(file_history, "./.fs_history");
     using_history();
     read_history(file_history);
@@ -32,11 +33,10 @@ int main(void){
     print_intro();
 
     for(;;){
-        char *prompt="shell> ";
+        char prompt[512];
+        strcpy(prompt, build_prompt());
         char *line=readline(prompt);
         if(!line) break;
-        /*clean è un metodo che "ripulisce" la stringa da 
-        spazi all'inizio e alla fine*/
         char *clean_line=clean(line);
         if(!*clean_line){
             free(line);
@@ -45,8 +45,6 @@ int main(void){
         add_history(clean_line);
 
         char *argv[8];
-        /*il metodo tokenize splitta gli argomenti passati alla shell, popola argv
-        e restiruisce in argc il numero dei token ottenuti*/
         int argc=tokenize(clean_line, argv, 8);
 
         if(argc==0){
@@ -92,10 +90,11 @@ int main(void){
             if (argc<2 || argc>3)
                 puts("uso: rm [-r|-rf] <file|dir>");
             else cmd_rm(argc==3?argv[2]:argv[1], argc==3?argv[1]:NULL);
-        } else if(!strcmp(argv[0], "close")){
+        }*/ else if(!strcmp(argv[0], "close")){
             if (argc<2 || argc>3)
                 cmd_close();
-        } else if (!strcmp(argv[0],"exit")){
+                puts("FS closed.");
+        }/* else if (!strcmp(argv[0],"exit")){
             if (file_history[0]) write_history(file_history);
             fs_close();
             puts("Uscita dalla shell.");
@@ -135,6 +134,6 @@ int main(void){
         free(line);
     }
     if(file_history[0]) write_history(file_history);
-    //fs_close();
+    cmd_close();
     return 0;
 }

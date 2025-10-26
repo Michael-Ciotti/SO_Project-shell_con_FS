@@ -16,5 +16,6 @@ void cmd_open(const char *img);
 void cmd_cat(const char *path);
 void cmd_append(const char *path, const char *text);
 void cmd_ls(const char *path);
+void cmd_close();
 
 #endif

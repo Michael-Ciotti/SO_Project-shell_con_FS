@@ -22,6 +22,8 @@ void cmd_format(const char *img, size_t size){
         return;
     }
 
+    if(fs.base) cmd_close();
+
     /*metodo che controlla se esiste la cartella img dove andrà il file
     persistente, ed eventualmente in caso negativo la crea*/
     img_dir();
@@ -130,10 +132,14 @@ void cmd_format(const char *img, size_t size){
     dir_append_entry(0, "..", 0);
 
     fs.cwd_inode=0;
+    strncpy(fs.fs_filename, img, strlen(img)-4);
+
     msync(fs.base, fs.file_size, MS_SYNC);
 
     printf("FS created: %s (size=%zu bytes, data_blocks=%u, bitmap_blocks=%u, inode_blocks=%u)\n",
             img, size, sb->total_blocks, sb->bitmap_blocks, sb->inode_blocks);   
+    
+    cmd_close();
 }
 
 void cmd_mkdir(const char *path){
@@ -162,7 +168,7 @@ void cmd_mkdir(const char *path){
     Inode *new_dir=&fs.inode_tab[inode];
     inode_ensure_block(new_dir, 0);
     dir_append_entry(inode, ".", inode);
-    dir_append_entry(inode, ".", p);
+    dir_append_entry(inode, "..", p);
     if(dir_append_entry(p, dir_name, inode)<0) puts("mkdir: dir full");
 }
 
@@ -206,22 +212,26 @@ void cmd_open(const char *img){
         puts("open: file must have .img extension. Retry.");
         return;
     }
+    if(fs.base) cmd_close();
     char path[1024];
     img_dir();
     snprintf(path, sizeof(path), "img/%s", img);
     fs.fd=open(path, O_RDWR);
     if(fs.fd<0){
-        printf("open %s: %s", path, strerror(errno));
+        char msg[512];
+        sprintf(msg, "open %s", path);
+        die(msg);
         return;
     }
     struct stat st;
-    if(fstat(fs.fd, &st)<0) die("fstat:");
+    if(fstat(fs.fd, &st)<0) die("fstat");
     fs.file_size=(size_t)st.st_size;
     fs.base=mmap(NULL, fs.file_size, PROT_READ|PROT_WRITE, MAP_SHARED, fs.fd, 0);
-    if(fs.base==MAP_FAILED) die("mmap:");
+    if(fs.base==MAP_FAILED) die("mmap");
     fs_bind(&fs);
     if(fs.sup_b->signature!=FS_SIGNATURE) die("Invalid image");
     fs.cwd_inode=fs.sup_b->root_inode;
+    strncpy(fs.fs_filename, img, strlen(img)-4);
 }
 
 void cmd_cat(const char *path){
@@ -277,5 +287,15 @@ void cmd_ls(const char *path){
                 }
             }
         }
+    }
+}
+
+void cmd_close(){
+    if(fs.base){
+        msync(fs.base, fs.file_size, MS_SYNC);
+        munmap(fs.base, fs.file_size);
+        if(fs.fd>=0) close(fs.fd);
+        memset(&fs, 0, sizeof(fs));
+        fs.fd=-1;
     }
 }
