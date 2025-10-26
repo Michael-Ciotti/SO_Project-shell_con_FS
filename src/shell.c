@@ -94,13 +94,13 @@ int main(void){
             if (argc<2 || argc>3)
                 cmd_close();
                 puts("FS closed.");
-        }/* else if (!strcmp(argv[0],"exit")){
+        }else if (!strcmp(argv[0],"exit")){
             if (file_history[0]) write_history(file_history);
-            fs_close();
+            cmd_close();
             puts("Uscita dalla shell.");
             free(line);
             break;
-        } else if (!strcmp(argv[0], "images")) {
+        }/* else if (!strcmp(argv[0], "images")) {
             if (argc != 1) 
                 puts("uso: images");
             else 
