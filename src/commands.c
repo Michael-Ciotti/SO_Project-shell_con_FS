@@ -7,6 +7,8 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <sys/errno.h>
+#include <dirent.h>
+#include <time.h>
 
 #include "commands.h"
 
@@ -29,7 +31,7 @@ void cmd_format(const char *img, size_t size){
     img_dir();
 
     char path[1024];
-    sprintf(path, "img/%s", img);
+    snprintf(path, sizeof(path), "img/%s", img);
 
     /*uso la struct stat di sys/stat.h per verificare che non esista già
     un filesystem con lo stesso nome (stat permette di ottenere informazioni
@@ -39,9 +41,6 @@ void cmd_format(const char *img, size_t size){
         printf("format: filesystem named \"%s\" already exists. Retry with a different name.\n", img);
         return;
     }
-
-    /*chiudo eventuali filesystem aperti*/
-    //fs_close();
 
     const uint32_t inode_bytes=MAX_INODES*sizeof(Inode);
     const uint32_t inode_blocks=(inode_bytes+BLOCK_SIZE-1)/BLOCK_SIZE;
@@ -111,7 +110,7 @@ void cmd_format(const char *img, size_t size){
                         + (size_t)sb->total_blocks*BLOCK_SIZE;
     if (need_bytes > fs.file_size){
         char msg[1024];
-        sprintf(msg, "format: internal layout overflow (need=%zu, have=%zu)", need_bytes, fs.file_size);
+        snprintf(msg, sizeof(msg), "format: internal layout overflow (need=%zu, have=%zu)", need_bytes, fs.file_size);
         die(msg);
     }
 
@@ -219,7 +218,7 @@ void cmd_open(const char *img){
     fs.fd=open(path, O_RDWR);
     if(fs.fd<0){
         char msg[512];
-        sprintf(msg, "open %s", path);
+        snprintf(msg, sizeof(msg), "open %s", path);
         die(msg);
         return;
     }
@@ -290,7 +289,7 @@ void cmd_ls(const char *path){
     }
 }
 
-void cmd_close(){
+void cmd_close(void){
     if(fs.base){
         msync(fs.base, fs.file_size, MS_SYNC);
         munmap(fs.base, fs.file_size);
@@ -298,4 +297,46 @@ void cmd_close(){
         memset(&fs, 0, sizeof(fs));
         fs.fd=-1;
     }
+}
+
+void cmd_images(void){
+    img_dir();
+    DIR *d=opendir("img");
+    if(!d){
+        perror("opendir: img dir not found");
+        return;
+    }
+    struct dirent *de;
+    int count=0;
+
+    printf("Images in img/: \n");
+    printf("%-14s %12s %s\n", "NAME", "BYTES", "MODIFIED");
+
+    while((de=readdir(d))!=NULL){
+        if(de->d_name[0]=='.') continue;
+        char path[1024];
+        snprintf(path, sizeof(path), "img/%s", de->d_name);
+
+        struct stat st;
+        if(stat(path, &st)<0) continue;
+        if(!S_ISREG(st.st_mode)) continue;
+        if(!check_ext(de->d_name)) continue;
+
+        /*formattazione della stringa che contiene la data e l'ora dell'ultima
+        modifica sul fs*/
+        char mtime[64];
+        struct tm tm;
+        /*conversione del tempo da secondi a data e ora che andranno nella struct tm*/
+        localtime_r(&st.st_mtime, &tm);
+        strftime(mtime, sizeof(mtime), "%Y-%m-%d %H:%M", &tm);
+
+        printf("%-14s %12lld %s\n", de->d_name, (long long)st.st_size, mtime);
+        count++;
+    }
+    closedir(d);
+
+    if(count==0)
+        puts("(No .img images were found)");
+    else
+        printf("Total: %d image%s.\n", count, count==1?"":"s");
 }

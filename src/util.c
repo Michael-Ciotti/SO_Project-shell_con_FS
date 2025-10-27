@@ -65,7 +65,7 @@ int check_ext(const char *name){
 
 /*metodo che controlla se esiste la cartella img dove andrà il file
 persistente, ed eventualmente in caso negativo la crea*/
-void img_dir(){
+void img_dir(void){
     struct stat st;
     if(stat("img", &st)==-1 && errno != EEXIST){
         if(mkdir("img", 0755)==-1 && errno != EEXIST){
@@ -75,12 +75,12 @@ void img_dir(){
 }
 
 /*metodo che controlla se un filesystem è aperto*/
-void ensure_opened(){
+void ensure_opened(void){
     if(!fs.base) die("No FS opened. Use: open <fs_filename.img> if you have one or, if not, format <fs_filename.img> <size>");
 }
 
 /*metodo che trova e ritorna il nome della directory corrente*/
-char *get_cwd_label(){
+char *get_cwd_label(void){
     uint32_t cwd_in=fs.cwd_inode;
     if(cwd_in==fs.sup_b->root_inode) return "/";
 
@@ -100,9 +100,9 @@ char *get_cwd_label(){
 }
 
 /*metodo che costruisce dinamicamente il prompt in base al fs e alla cwd*/
-char *build_prompt(){
+char *build_prompt(void){
     if(!fs.base||!get_cwd_label()) return "shell> ";
     static char res[512];
-    sprintf(res, "%s %s> ", fs.fs_filename, get_cwd_label());
+    snprintf(res, sizeof(res), "%s %s> ", fs.fs_filename, get_cwd_label());
     return res;
 }

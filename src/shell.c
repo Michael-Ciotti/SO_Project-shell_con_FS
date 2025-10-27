@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stddef.h>
-
 /*Librerie per la gestione della cronologia dei comandi e per l'utilizzo 
 della funzione readline*/
 #include <readline/readline.h>
@@ -26,7 +25,7 @@ int main(void){
     /*Scrittura del nome del file di cronologia nel buffer globale e 
     inizializzazione del "tool" che permette di gestire la cronologia 
     dei comandi*/
-    sprintf(file_history, "./.fs_history");
+    snprintf(file_history, sizeof(file_history), "./.fs_history");
     using_history();
     read_history(file_history);
 
@@ -88,7 +87,7 @@ int main(void){
                 cmd_append(argv[1], argv[2]);
         }/* else if(!strcmp(argv[0], "rm")){
             if (argc<2 || argc>3)
-                puts("uso: rm [-r|-rf] <file|dir>");
+                puts("use: rm [-r|-rf] <file|dir>");
             else cmd_rm(argc==3?argv[2]:argv[1], argc==3?argv[1]:NULL);
         }*/ else if(!strcmp(argv[0], "close")){
             if (argc<2 || argc>3)
@@ -100,12 +99,12 @@ int main(void){
             puts("Uscita dalla shell.");
             free(line);
             break;
-        }/* else if (!strcmp(argv[0], "images")) {
+        } else if (!strcmp(argv[0], "images")) {
             if (argc != 1) 
-                puts("uso: images");
+                puts("use: images");
             else 
                 cmd_images();
-        } */else if (!strcmp(argv[0],"open")){
+        } else if (!strcmp(argv[0],"open")){
             if (argc!=2){ puts("use: open <fs_filename.img>"); }
             else {
                 cmd_open(argv[1]);
