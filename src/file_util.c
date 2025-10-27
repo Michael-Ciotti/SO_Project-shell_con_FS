@@ -1,4 +1,10 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+#include "fs.h"
 #include "file_util.h"
+#include "gen_util.h"
 
 /*metodo che legge dall'inode del file indicato il suo contenuto, un blocco
 alla volta, e lo stampa su stdout*/
@@ -19,6 +25,8 @@ int file_read(int in_ind){
     return 0;
 }
 
+/*metodo che scrive nell'area dati dell'inode passato nei parametri
+il testo inserito in input (anch'esso passato come stringa nei parametri)*/
 int file_write(int in_ind, const char *text){
     Inode *inode=&fs.inode_tab[in_ind];
     if(inode->type!=INODE_FILE) return -1;

@@ -11,6 +11,9 @@
 #include <time.h>
 
 #include "commands.h"
+#include "gen_util.h"
+#include "dir_util.h"
+#include "file_util.h"
 
 void cmd_format(const char *img, size_t size){
     if(!img || !*img){
@@ -309,8 +312,8 @@ void cmd_images(void){
     struct dirent *de;
     int count=0;
 
-    printf("Images in img/: \n");
-    printf("%-14s %12s %s\n", "NAME", "BYTES", "MODIFIED");
+    printf("Images in img/: \n\n");
+    printf("%-14s %12s %s\n", "NAME", "BYTES", "MODIFIED\n");
 
     while((de=readdir(d))!=NULL){
         if(de->d_name[0]=='.') continue;
@@ -338,5 +341,107 @@ void cmd_images(void){
     if(count==0)
         puts("(No .img images were found)");
     else
-        printf("Total: %d image%s.\n", count, count==1?"":"s");
+        printf("\nTotal: %d image%s\n", count, count==1?"":"s");
+}
+
+static void cmd_rm_recursive(int32_t inode, int force){
+    Inode *dir=&fs.inode_tab[inode];
+    if(dir->type!=INODE_DIR){
+        if(!force){
+            puts("rm: error, not dir");
+        }
+        return;
+    }
+    int max_entries=(DIRECT_PTRS*BLOCK_SIZE)/sizeof(DirEntry);
+    char *entries[max_entries];
+    int n=list_dir_entries(inode, entries, max_entries);
+
+    for(int i=0; i<n; i++){
+        /*rimuovo, in caso di directory, la "/" finale (aggiunta in 
+        list_dir_entries solo per una questione di distinzione dai file)*/
+        size_t len=strlen(entries[i]);
+        while(len>1 && entries[i][len-1]=='/') entries[i][--len]='\0';
+
+        if(entries[i][0]=='\0' || dot_case(entries[i])){
+            free(entries[i]);
+            continue;
+        }
+
+        DirEntry de;
+        if(dir_find(dir, entries[i], NULL, &de)<0){
+            if(!force)
+                printf("rm: cannot access %s\n", entries[i]);
+            free(entries[i]);
+            continue;
+        }
+
+        Inode *in=&fs.inode_tab[de.inode];
+        if(in->type==INODE_DIR){
+            if(de.inode==(int32_t)fs.sup_b->root_inode){
+                if(!force) puts("rm: refusing to remove /");
+                free(entries[i]);
+                continue;
+            }
+            /*chiamata ricorsiva per dare la precedenza allo svuotamento
+            delle eventuali sub_directories*/
+            cmd_rm_recursive(de.inode, force);
+        }
+
+        free_inode_blocks(in);
+        memset(in, 0, sizeof(*in));
+        dir_remove_entry(dir, entries[i]);
+        free(entries[i]);
+    }
+}
+
+void cmd_rm(const char *path, char *flag){
+    ensure_opened();
+    if(!path || !*path){
+        puts("use: rm [-r|-rf] <file|dir>");
+        return;
+    }
+    int recursive=0, force=0;
+    if(flag){
+        if(flag[0]=='-' && flag[1]=='r'){
+            recursive=1;
+            if(flag[2]=='f') force=1;
+        }
+        else{
+            printf("rm: unknown \"%s\" flag. Use: rm [-r|-rf] <file|dir>\n", flag);
+            return;
+        }
+    }
+    char entry_name[MAX_NAME]={0};
+    int p=path_to_inode_n(path, 1, entry_name);
+    if(p<0){
+        if(!force) puts("rm: parent not found");
+        return;
+    }
+    Inode *pd=&fs.inode_tab[p];
+    DirEntry de;
+    if(dir_find(pd, entry_name, NULL, &de)<0){
+        if(!force) puts("rm: not found");
+        return;
+    }
+
+    Inode *cur_in=&fs.inode_tab[de.inode];
+
+    if((cur_in->type==INODE_DIR || cur_in->type==INODE_FILE) && !recursive){
+        if(cur_in->type==INODE_DIR && !is_dir_empty(de.inode)){
+            puts("rm: dir not empty (use: -r or -rf)");
+            return;
+        }
+        free_inode_blocks(cur_in);
+        memset(cur_in, 0, sizeof(*cur_in));
+        dir_remove_entry(pd, entry_name);
+        return;
+    }
+
+    if(cur_in->type==INODE_DIR && recursive){
+        cmd_rm_recursive(de.inode, force);
+    }
+
+    free_inode_blocks(cur_in);
+    memset(cur_in, 0, sizeof(*cur_in));
+    dir_remove_entry(pd, entry_name);
 }

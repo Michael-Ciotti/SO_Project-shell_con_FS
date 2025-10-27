@@ -8,7 +8,7 @@
 #include <sys/stat.h>
 
 #include "fs.h"
-#include "util.h"
+#include "gen_util.h"
 
 /*clean è un metodo che "ripulisce" la stringa da spazi all'inizio e alla fine*/
 char *clean(char *s){
@@ -105,4 +105,10 @@ char *build_prompt(void){
     static char res[512];
     snprintf(res, sizeof(res), "%s %s> ", fs.fs_filename, get_cwd_label());
     return res;
+}
+
+/*metodo booleano che ritorna 1 se il nome è "." o ".." e 0 altrimenti, 
+ed è utile per il caso da ignorare nella rm*/
+int dot_case(char *name){
+    return (strcmp(name, ".")==0 || strcmp(name, "..")==0);
 }

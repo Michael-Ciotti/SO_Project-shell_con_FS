@@ -1,13 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stddef.h>
 /*Librerie per la gestione della cronologia dei comandi e per l'utilizzo 
 della funzione readline*/
 #include <readline/readline.h>
 #include <readline/history.h>
 
-#include "util.h"
+#include "gen_util.h"
 #include "commands.h"
 
 
@@ -85,11 +84,16 @@ int main(void){
                 puts("use: append <filename> <text> (if you need to use spaces, write text like \"Hello World!!!\")");
             else
                 cmd_append(argv[1], argv[2]);
-        }/* else if(!strcmp(argv[0], "rm")){
-            if (argc<2 || argc>3)
+        } else if(!strcmp(argv[0], "rm")){
+            if (argc<2){
                 puts("use: rm [-r|-rf] <file|dir>");
-            else cmd_rm(argc==3?argv[2]:argv[1], argc==3?argv[1]:NULL);
-        }*/ else if(!strcmp(argv[0], "close")){
+                continue;
+            }
+            int has_flags=(strcmp(argv[1], "-r")==0 || strcmp(argv[1], "-rf")==0);
+            for(int i=has_flags?2:1; i<argc; i++){
+                cmd_rm(argv[i], has_flags?argv[1]:NULL);
+            }
+        } else if(!strcmp(argv[0], "close")){
             if (argc<2 || argc>3)
                 cmd_close();
                 puts("FS closed.");
@@ -118,13 +122,13 @@ int main(void){
             puts("- cd <path>");
             puts("- touch <filename>");
             puts("- cat <filename>");
-            puts("- ls");
+            puts("- ls [path]");
             puts("- append <filename> <text>");
             puts("- rm [-r|-rf] <file|dir>");
-            puts("- close <fs_filename.img>");
-            puts("- exit (exits from shell)");
-            puts("- images (show a list of created filesystems)");
             puts("- open <fs_filename.img>");
+            puts("- close <fs_filename.img>");
+            puts("- images (shows a list of created filesystems)");
+            puts("- exit (closes fs opened and exits from shell)");
             puts("");
             puts("=========================================");
         } else {

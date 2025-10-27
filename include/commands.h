@@ -2,9 +2,6 @@
 #define COMMANDS_H
 
 #include "fs.h"
-#include "util.h"
-#include "dir_util.h"
-#include "file_util.h"
 
 extern FS fs;
 
@@ -18,5 +15,6 @@ void cmd_append(const char *path, const char *text);
 void cmd_ls(const char *path);
 void cmd_close(void);
 void cmd_images(void);
+void cmd_rm(const char *path, char *flag);
 
 #endif

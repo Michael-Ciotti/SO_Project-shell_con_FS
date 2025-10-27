@@ -1,4 +1,6 @@
+#include <string.h>
 #include "fs.h"
+#include "gen_util.h"
 
 /*inizializzazione globale (condivisa) di tutti i campi della struct FS a 0, tranne 
 fd che inizializzo a -1 per indicare che non c'è nessun file aperto*/
@@ -13,7 +15,8 @@ void fs_bind(FS *fs){
 }
 
 /*metodo che cerca ricorsivamente un blocco libero sulla bitmap
-e appena trovato lo setta come pieno*/
+e appena trovato lo setta come pieno. Infine ritorna il blocco
+in caso di successo e -1 altrimenti*/
 int alloc_block(){
     for(uint32_t b=0; b<fs.sup_b->total_blocks; ++b){
         if(fs.bitmap[b]==0){
@@ -55,4 +58,25 @@ int  alloc_inode(InodeType t, uint32_t parent){
         }
     }
     return -1;
+}
+
+
+/*metodo che libera i blocchi associati ad un inode, aggiornando i direct
+pointers, la bitmap e la dimensione dell'inode*/
+void free_inode_blocks(Inode *inode){
+    if(inode->type!=INODE_FILE && inode->type!=INODE_DIR) return;
+    uint32_t size=inode->size, max_block=(size+BLOCK_SIZE-1)/BLOCK_SIZE;
+    if(max_block>DIRECT_PTRS) max_block=DIRECT_PTRS;
+    for(uint32_t i=0; i<max_block; i++){
+        if(inode->direct[i]){
+            if(inode->direct[i]>=fs.sup_b->total_blocks) die("bitmap: out of range");
+            /*segno a 0 il blocco sulla bitmap, per segnalare che è vuoto,
+            dato che è stato liberato*/
+            fs.bitmap[inode->direct[i]]=0;
+            /*setto il puntatore a 0 per indicare che così l'inode non punta
+            più a quel blocco*/
+            inode->direct[i]=0;
+        }
+    }
+    inode->size=0;
 }

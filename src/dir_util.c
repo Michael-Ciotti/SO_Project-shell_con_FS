@@ -43,7 +43,7 @@ int dir_append_entry(int dir_inode, const char *name, int target_inode){
     return -1;
 }
 
-/*metodo che cerca se una DirEntry è gia presente*/
+/*metodo che cerca se una DirEntry è gia presente: se presente la salva in *out*/
 int dir_find(Inode *dir, const char *name, int *out_slot, DirEntry *out){
     if(!dir || dir->type!=INODE_DIR) return -1;
     uint32_t nbytes =dir->size, pos=0;
@@ -109,4 +109,77 @@ int path_to_inode_n(const char *path, int parent_req, char *name){
         else return -1;
     }
     return cur;
+}
+
+/*metodo che rimuove una entry con un dato nome da una directory passata
+nei parametri*/
+void dir_remove_entry(Inode *dir, char *name){
+    uint32_t nbytes=dir->size, pos=0;
+    while(pos<nbytes){
+        int block_index=(int)(pos/BLOCK_SIZE), off=(int)(pos%BLOCK_SIZE);
+        if(block_index>=DIRECT_PTRS) break;
+        if(dir->direct[block_index]==0) break;
+        DirEntry *arr=(DirEntry*)(block_ptr(dir->direct[block_index])+off);
+        int rem_space=BLOCK_SIZE-off, capacity=rem_space/(int)sizeof(DirEntry);
+        for(int i=0; i<capacity && pos<nbytes; i++, pos+=sizeof(DirEntry)){
+            if(arr[i].inode!=-1 && strncmp(arr[i].name, name, MAX_NAME)==0){
+                arr[i].inode=-1;
+                arr[i].name[0]=0;
+                return;
+            }
+        }
+    }
+}
+
+/*metodo che legge tutte le entries di una directory e ne inserisce il nome
+nell'array di stringhe passato nei parametri (le directory verranno inserite
+come "dir_name/" e i file semplicemente come "filename"). Si ritorna infine anche
+il numero delle entries trovate.*/
+int list_dir_entries(int32_t inode, char **entries, int max_entries){
+    int count=0;
+    Inode *in=&fs.inode_tab[inode];
+    if(in->type!=INODE_DIR) return 0;
+
+    uint32_t size=in->size, pos=0; 
+    while(pos<size){
+        int block_index=(int)(pos/BLOCK_SIZE), off=(int)(pos%BLOCK_SIZE);
+        if(block_index>=DIRECT_PTRS) break;
+        if(in->direct[block_index]==0) break;
+        DirEntry *arr=(DirEntry*)(block_ptr(in->direct[block_index])+off);
+        int rem_space=BLOCK_SIZE-off, capacity=rem_space/(int)sizeof(DirEntry);
+        for(int i=0; i<capacity && pos<in->size; i++, pos+=sizeof(DirEntry)){
+            if(arr[i].inode!=-1){
+                char tmp[MAX_NAME+2];
+                if(arr[i].inode>=0 && arr[i].inode<MAX_INODES && fs.inode_tab[arr[i].inode].type==INODE_DIR)
+                    snprintf(tmp, sizeof(tmp), "%s/", arr[i].name);
+                else
+                    snprintf(tmp, sizeof(tmp), "%s", arr[i].name);
+                if(count<max_entries) entries[count++]=strdup(tmp);
+            }
+        }
+    }
+    return count;
+}
+
+/*metodo booleano che ritorna 1 se la directory è vuota (se contiene solo 
+"." e "..") e 0 se invece contiene altre entries o se non è una directory*/
+int is_dir_empty(int dir_inode){
+    Inode *dir=&fs.inode_tab[dir_inode];
+    if(dir->type!=INODE_DIR) return 0;
+    int count=0;
+    uint32_t size=dir->size, pos=0;
+    while(pos<size){
+        int block_index=(int)(pos/BLOCK_SIZE), off=(int)(pos%BLOCK_SIZE);
+        if(block_index>=DIRECT_PTRS) break;
+        if(dir->direct[block_index]==0)break;
+        DirEntry *arr=(DirEntry*)(block_ptr(dir->direct[block_index])+off);
+        int rem_space=BLOCK_SIZE-off, capacity=rem_space/(int)sizeof(DirEntry);
+        for(int i=0; i<capacity && pos<size; i++, pos+=sizeof(DirEntry)){
+            if(arr[i].inode!=-1){
+                /*la condizione è posta come maggiore di 2 per ignorare "." e ".."*/
+                if(++count>2) return 0;
+            }
+        }
+    }
+    return 1;
 }

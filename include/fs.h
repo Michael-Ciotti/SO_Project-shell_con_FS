@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include <string.h>
 
 /*Ho inserito la firma perchè permette di capire se il filesystem è valido
 (l'esadecimale indica i 4 caratteri MCFS -> Michael Ciotti's File System)*/
@@ -65,6 +64,7 @@ void fs_bind(FS *fs);
 int alloc_block(void);
 int inode_ensure_block(Inode *inode, int slot);
 uint8_t* block_ptr(uint32_t block);
-int  alloc_inode(InodeType t, uint32_t parent);
+int alloc_inode(InodeType t, uint32_t parent);
+void free_inode_blocks(Inode *inode);
 
 #endif
