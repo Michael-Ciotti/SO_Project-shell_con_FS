@@ -27,12 +27,10 @@ typedef struct {
     uint32_t inode_blocks; //numero di blocchi occupati daglla tabella degli inode
 }Super;
 
-
 //Struttura che rappresenta gli Inodes
 typedef struct {
     uint8_t type;
     uint32_t size;
-    uint32_t nlinks; //numero di voci della directory che puntano ad un inode (in caso di file copiati)
     uint32_t parent;
     uint32_t direct[DIRECT_PTRS]; 
 }Inode;

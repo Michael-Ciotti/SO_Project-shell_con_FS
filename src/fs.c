@@ -14,7 +14,7 @@ void fs_bind(FS *fs){
     fs->data=(uint8_t*)fs->base+BLOCK_SIZE+fs->sup_b->bitmap_blocks*BLOCK_SIZE+fs->sup_b->inode_blocks*BLOCK_SIZE;
 }
 
-/*metodo che cerca ricorsivamente un blocco libero sulla bitmap
+/*metodo che cerca iterativamente un blocco libero sulla bitmap
 e appena trovato lo setta come pieno. Infine ritorna il blocco
 in caso di successo e -1 altrimenti*/
 int alloc_block(){

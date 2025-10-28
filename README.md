@@ -1,4 +1,4 @@
-# Shell con File System Persistente (C)
+# Shell con File System Persistente in C
 
 > Progetto: una mini-shell in C che gestisce un file system **persistente** memorizzato su file immagine, con un set di comandi integrati (stile Unix).
 
@@ -37,7 +37,8 @@ La shell fornisce:
 │   └── shell.c
 ├── LICENSE
 ├── Makefile
-└── README.md
+├── README.md
+└── SO_FS_Project_Report.pdf
 ```
 
 > Il `Makefile` assume `SRC_DIR := src`, `INC_DIR := include`, `IMG_DIR := img` (wildcard `src/*.c`). Il binario risultante si chiama **`shell`**.
@@ -120,11 +121,11 @@ exit
 ## 🧠 Scelte progettuali
 - **Modularità**:
   - `shell.c` → interfaccia, parsing, loop e history;
-  - `commands.c` → implementazione dei comandi e validazioni;
+  - `commands.c / commands.h` → implementazione dei comandi e validazioni;
   - `fs.c` / `fs.h` → strutture dati del FS, allocation/free blocchi/inode;
-  - `dir_util.c` → operazioni su directory (append/find/capacity ecc.);
-  - `file_util.c` → lettura/scrittura file con blocchi diretti;
-  - `gen_util.c` → utilità generiche (prompt, trimming, error handling ecc.).
+  - `dir_util.c` / `dir_util.h` → operazioni su directory (append/find/capacity ecc.);
+  - `file_util.c` / `file_util.h` → lettura/scrittura file con blocchi diretti;
+  - `gen_util.c` / `gen_util.h` → utilità generiche (prompt, trimming, error handling ecc.).
 - **Persistenza** tramite `mmap` del file immagine per accesso efficiente;
 - **Sanitizer** abilitati per robustezza in sviluppo;
 - **Semplicità didattica**: bitmap rappresentata come array di byte e non come bit.
@@ -132,8 +133,8 @@ exit
 ## ✅ Testing veloce
 ```bash
 ./shell <<'EOF'
-open img/test.img
-format img/test.img
+format test.img 1048576
+open test.img
 mkdir /a
 mkdir /a/b
 touch /a/b/x.txt
@@ -142,14 +143,18 @@ cat /a/b/x.txt
 ls /a/b
 rm /a/b/x.txt
 rm -r /a
-close img/test.img
+close
 exit
 EOF
 ```
+## 📄 Documentazione
+Per una descrizione completa del progetto, consulta il report:
+
+➡️ [Report del progetto (PDF)](./SO_FS_Project_Report.pdf)
 
 ## 👨‍🎓 Autore e corso
 - Studente: _Michael Ciotti_  
-- Corso: _Sistemi Operativi_ — _Università la Sapienza_  
+- Corso: _Sistemi Operativi_ — _Sapienza Università di Roma_  
 - Docente: _Giorgio Grisetti_  
 - Anno accademico: _2024/2025_
 

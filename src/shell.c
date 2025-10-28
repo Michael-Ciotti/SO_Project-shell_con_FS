@@ -18,9 +18,7 @@ static void print_intro(){
     printf("================================================\n\n");
 }
 
-
 int main(void){
-
     /*Scrittura del nome del file di cronologia nel buffer globale e 
     inizializzazione del "tool" che permette di gestire la cronologia 
     dei comandi*/
@@ -136,6 +134,7 @@ int main(void){
         }
         free(line);
     }
+    
     if(file_history[0]) write_history(file_history);
     cmd_close();
     return 0;

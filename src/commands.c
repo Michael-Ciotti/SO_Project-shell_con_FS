@@ -140,7 +140,6 @@ void cmd_format(const char *img, size_t size){
 
     printf("FS created: %s (size=%zu bytes, data_blocks=%u, bitmap_blocks=%u, inode_blocks=%u)\n",
             img, size, sb->total_blocks, sb->bitmap_blocks, sb->inode_blocks);   
-    
     cmd_close();
 }
 
@@ -329,10 +328,10 @@ void cmd_images(void){
         modifica sul fs*/
         char mtime[64];
         struct tm tm;
+
         /*conversione del tempo da secondi a data e ora che andranno nella struct tm*/
         localtime_r(&st.st_mtime, &tm);
         strftime(mtime, sizeof(mtime), "%Y-%m-%d %H:%M", &tm);
-
         printf("%-14s %12lld %s\n", de->d_name, (long long)st.st_size, mtime);
         count++;
     }
@@ -400,6 +399,7 @@ void cmd_rm(const char *path, char *flag){
         puts("use: rm [-r|-rf] <file|dir>");
         return;
     }
+
     int recursive=0, force=0;
     if(flag){
         if(flag[0]=='-' && flag[1]=='r'){
@@ -411,12 +411,14 @@ void cmd_rm(const char *path, char *flag){
             return;
         }
     }
+
     char entry_name[MAX_NAME]={0};
     int p=path_to_inode_n(path, 1, entry_name);
     if(p<0){
         if(!force) puts("rm: parent not found");
         return;
     }
+    
     Inode *pd=&fs.inode_tab[p];
     DirEntry de;
     if(dir_find(pd, entry_name, NULL, &de)<0){
